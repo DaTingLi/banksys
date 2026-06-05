@@ -1,0 +1,65 @@
+# 银行客户认购预测 · 持续部署(CD)
+# 触发:合并 / push 到 main(即 CI 已通过)。
+# ★ 这里的 SSH 由 runner 自动发起 = 这才是 CD;你手动连 SSH 敲命令不是 CD。
+#
+# 必须在 GitHub → Settings → Secrets and variables → Actions 配置(绝不写进代码):
+#   SSH_PRIVATE_KEY  服务器部署私钥全文(含 BEGIN/END)
+#   SSH_HOST         服务器公网 IP 或域名
+#   SSH_USER         部署用户(如 deploy)
+#
+# 服务器前置:已装 Docker;部署目录 /opt/banksys 归 SSH_USER 所有;放行 8000 端口。
+name: CD
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 配置部署私钥(来自 Secrets)
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: 同步代码到服务器
+        run: |
+          rsync -az -e "ssh -i ~/.ssh/deploy_key" --delete \
+            --exclude '.git' --exclude '.venv' \
+            ./ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/banksys/"
+
+      - name: 服务器上训练→构建→运行→健康检查(runner 自动 SSH = CD)
+        run: |
+          ssh -i ~/.ssh/deploy_key "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" '
+            set -e
+            cd /opt/banksys
+            MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
+            # 1) 用基础镜像在容器内训练(data/ 已随 rsync 同步上来),
+            #    产出 models/model.pkl 到挂载的工作目录,供下一步打进服务镜像。
+            docker run --rm -v "$PWD":/app -w /app python:3.11-slim \
+              bash -lc "pip install --no-cache-dir -i $MIRROR -r requirements.txt && python -m src.model --check-auc 0.80"
+            # 2) 构建服务镜像(含刚训练出的 model.pkl)
+            docker build --build-arg PIP_INDEX_URL=$MIRROR -t banksys:latest .
+            # 3) 重启容器并健康检查
+            docker stop banksys 2>/dev/null || true
+            docker rm banksys 2>/dev/null || true
+            docker run -d --name banksys -p 8000:8000 banksys:latest
+            sleep 5
+            curl -fsS http://localhost:8000/health
+          '
+
+  # 生产发布:金融场景留人工卡点 = 持续交付(Continuous Delivery)
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment:
+      name: production   # 在该 environment 配 Required reviewers,发布前需人工批准
+    steps:
+      - name: 生产部署(人工审批后执行)
+        run: echo "审批通过,执行生产部署(同 Staging 的 SSH 步骤,指向生产机)"

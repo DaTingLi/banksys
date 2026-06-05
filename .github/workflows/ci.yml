@@ -1,0 +1,48 @@
+# 银行客户认购预测 · 持续集成(CI)
+# 触发:对 main 的 PR 与 push。CI 不需要任何密钥。
+# 门禁:格式 → lint → 测试+覆盖率(≥80%) → 模型 AUC≥0.80 → 镜像可构建。
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: 安装依赖(运行依赖 + 开发/CI 依赖)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      # ---- 门禁 1:格式 ----
+      - name: Ruff 格式检查
+        run: ruff format --check .
+
+      # ---- 门禁 2:静态检查 ----
+      - name: Ruff lint
+        run: ruff check .
+
+      # ---- 门禁 3:单元测试 + 覆盖率(<80% 红灯)----
+      - name: 单元测试 + 覆盖率
+        run: pytest --cov=src --cov-fail-under=80 -q
+
+      # ---- 门禁 4(ML 特有):训练并校验模型 AUC≥0.80 ----
+      - name: 模型质量门禁(AUC>=0.80)
+        run: python -m src.model --check-auc 0.80
+
+      # ---- 门禁 5:生产镜像能构建(需先有 models/model.pkl,上一步已生成)----
+      - name: 构建 Docker 镜像(只验证能 build)
+        run: docker build --build-arg PIP_INDEX_URL=https://pypi.org/simple -t banksys:ci .

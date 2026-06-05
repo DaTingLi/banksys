@@ -1,0 +1,27 @@
+[project]
+name = "banksys"
+version = "1.0.0"
+description = "银行客户认购预测系统(数据探索 + 模型训练 + 在线预测 + CI/CD)"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["src"]
+# Streamlit 页面是交互式 UI,靠人工运行截图验收,不纳入单测覆盖率。
+omit = ["src/data_explorer/app.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "if __name__ == .__main__.:",
+    "pragma: no cover",
+]

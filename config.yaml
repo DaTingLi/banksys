@@ -1,0 +1,13 @@
+# 非敏感配置(无任何密钥)。密钥只进 GitHub Secrets / 环境变量。
+service:
+  host: 0.0.0.0
+  port: 8000
+  healthcheck: /health
+
+model:
+  auc_gate: 0.80
+  random_state: 42
+
+data:
+  train: data/train.csv
+  test: data/test.csv
