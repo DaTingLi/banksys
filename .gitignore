@@ -1,0 +1,19 @@
+# 教学数据已入库:CI 的 pytest 与 AUC 门禁需要 train.csv,提交后 CI 才能在干净 runner 上复现。
+# (生产/敏感数据请勿入库;此处为公开教学数据集的有意例外。)
+# /data/*.csv
+
+# 模型产物不进 Git(由训练生成 / CI 重建)
+/models/*.pkl
+
+# Python 运行产物
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# 虚拟环境
+.venv/
+venv/
+env/
