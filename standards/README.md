@@ -69,25 +69,21 @@ Windows 可手动复制文件夹,复制后目录应是:
 
 ---
 
-## 5. 标准开发闭环
+## 5. 标准开发闭环 · 固定六步(每步确认)
+
+AI 严格按 `06-ai-collab-protocol.md` 的「六步交付流程 + 确认门」推进,**每到确认门停下汇报、等人确认**:
 
 ```text
-读 standards
-  → 从 main 开 feature 分支
-  → 写代码 + 测试
-  → 本地自检
-  → commit
-  → push feature 分支
-  → 创建 PR
-  → CI 自动检查
-  → Review + 分支保护通过
-  → 合并 main
-  → CD 自动部署
-  → 验证 /health 或业务验收
-  → 写回 PROGRESS
+① 建仓 + 配 Secrets    AI 建仓 → ✋提示人类配 SSH_PRIVATE_KEY/HOST/USER(新仓库默认没有)
+② 开 feature 分支       从 main 切分支,严禁直接改 main         ✋报分支名
+③ 本地模块化开发        逐模块写代码+测试,每模块更新 PROGRESS  ✋每个模块汇报进度
+④ 本地 CI 自检(AI 跑)  ruff + pytest + 覆盖率 + 项目门禁;本地不强制 docker  ✋全绿才继续
+⑤ 触发 PR              push + AI 主动建 PR,CI 在 PR 上复检    ✋报 PR 链接 + CI 状态
+⑥ 人工审核 →(人)合并 → CD  ✋AI 发完 PR 即停;Review 与 Merge 都由人做;合并触发 CD → ✋报端口/健康检查
 ```
 
-**课堂第一项功能必须完整演示一次这条链**,不能直接 push main。
+**课堂第一项功能必须完整演示一次这条链**,不能直接 push main;
+**合并是人类的动作——AI 绝不自行合并 PR;分支默认保留(不自动删)。**
 
 ---
 
