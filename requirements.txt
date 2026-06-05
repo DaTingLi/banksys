@@ -1,0 +1,11 @@
+# 生产运行依赖(锁版本,保证本地 / CI / 服务器一致)
+# 覆盖:模型训练 + 在线预测服务的运行所需。
+pandas==2.2.3
+numpy==2.1.3
+scikit-learn==1.5.2
+joblib==1.4.2
+rich==13.9.4
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+gunicorn==23.0.0

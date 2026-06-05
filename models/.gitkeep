@@ -1,0 +1,2 @@
+# 占位文件:保留 models/ 目录,便于 Docker COPY。
+# 真实模型 model.pkl 由 `python -m src.model` 生成,不进 Git。
