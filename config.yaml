@@ -1,7 +1,9 @@
 # 非敏感配置(无任何密钥)。密钥只进 GitHub Secrets / 环境变量。
 service:
   host: 0.0.0.0
-  port: 8000
+  container_port: 8000        # 容器内固定监听端口
+  preferred_host_port: 8000   # 主机优先端口;被占用时 CD 在下方区间自动回退
+  host_port_range: [8000, 8010]
   healthcheck: /health
 
 model:

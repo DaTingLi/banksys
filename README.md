@@ -89,8 +89,9 @@ gh pr merge --merge --delete-branch   # 合并后触发 CD
 | `SSH_HOST` | 服务器公网 IP / 域名 |
 | `SSH_USER` | 部署用户(如 `deploy`) |
 
-服务器前置:已装 Docker、部署目录 `/opt/banksys` 可写、数据放在 `/opt/banksys/data/`、放行 8000 端口。
-CD 会自动:同步代码 → 容器内训练出 `model.pkl` → `docker build` → 起容器 → `curl /health`。
+服务器前置:已装 Docker、部署目录 `/opt/banksys` 可写、**放行 8000-8010 端口段**。
+CD 会自动:同步代码(含 data)→ 容器内训练出 `model.pkl` → `docker build` → 起容器 → `curl /health`。
+端口:容器内固定 8000;**主机端口优先 8000,被占用时自动在 8000-8010 选空闲端口**,最终端口会在 CD 日志打印。
 
 ---
 
@@ -102,7 +103,8 @@ CD 会自动:同步代码 → 容器内训练出 `model.pkl` → `docker build` 
 | Windows 控制台 `UnicodeEncodeError('gbk' ... \u25b6)` | 打印别用特殊符号(本项目日志已用纯 ASCII);或 `set PYTHONIOENCODING=utf-8` / `chcp 65001`。pytest 会捕获输出掩盖此坑,**务必真跑一次 `python -m src.model`** |
 | pip 慢/超时 | 加 `-i https://pypi.tuna.tsinghua.edu.cn/simple` |
 | Docker COPY models 失败 | `models/` 要存在(保留 `.gitkeep`);`model.pkl` 由训练生成,不进 Git |
-| CD 失败 | 多半是 Secrets 没配 / 服务器没装 Docker / 端口没放行 |
+| CD `port is already allocated`(exit 125) | 主机端口被占用;CD 已支持 8000-8010 自动回退,确保防火墙放行该端口段 |
+| CD 失败 | 多半是 Secrets 没配 / 服务器没装 Docker / 端口段没放行 |
 
 ---
 

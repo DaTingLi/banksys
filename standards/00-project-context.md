@@ -84,7 +84,7 @@ banksys/
 |---|---|---|
 | `<APP>` | `banksys` | 镜像名/容器名 |
 | `<DEPLOY_DIR>` | `/opt/banksys` | 服务器部署目录 |
-| `<PORT>` | `8000` | 服务端口 |
+| `<PORT>` | 容器内固定 `8000`;主机端口优先 `8000`,被占用则在 `8000-8010` 自动回退 | 见 cd.yml 选端口逻辑 |
 | `<PYVER>` | `3.11` | Python 版本 |
 | `<HEALTHCHECK>` | `/health` | 健康检查地址 |
 | `<SSH_USER>` | `deploy` | 部署用户 |

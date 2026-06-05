@@ -7,7 +7,7 @@
 #   SSH_HOST         服务器公网 IP 或域名
 #   SSH_USER         部署用户(如 deploy)
 #
-# 服务器前置:已装 Docker;部署目录 /opt/banksys 归 SSH_USER 所有;放行 8000 端口。
+# 服务器前置:已装 Docker;部署目录 /opt/banksys 归 SSH_USER 所有;放行 8000-8010 端口段。
 name: CD
 
 on:
@@ -46,12 +46,24 @@ jobs:
               bash -lc "pip install --no-cache-dir -i $MIRROR -r requirements.txt && python -m src.model --check-auc 0.80"
             # 2) 构建服务镜像(含刚训练出的 model.pkl)
             docker build --build-arg PIP_INDEX_URL=$MIRROR -t banksys:latest .
-            # 3) 重启容器并健康检查
-            docker stop banksys 2>/dev/null || true
-            docker rm banksys 2>/dev/null || true
-            docker run -d --name banksys -p 8000:8000 banksys:latest
+            # 3) 选端口:容器内固定 8000;主机端口优先 8000,被占用就在 8000-8010 里自动选空闲端口。
+            port_in_use() {
+              ss -ltnH 2>/dev/null | grep -q ":$1 " && return 0
+              docker ps --format "{{.Ports}}" 2>/dev/null | grep -q ":$1->" && return 0
+              return 1
+            }
+            PORT=""
+            for p in $(seq 8000 8010); do
+              if ! port_in_use "$p"; then PORT="$p"; break; fi
+            done
+            [ -z "$PORT" ] && { echo "8000-8010 端口全被占用,部署中止"; exit 1; }
+            echo ">> banksys 将部署到主机端口 $PORT(容器内仍是 8000)"
+            # 先一步停删本应用旧容器(幂等);CD 可反复执行不残留。
+            docker rm -f banksys 2>/dev/null || true
+            docker run -d --name banksys --restart unless-stopped -p ${PORT}:8000 banksys:latest
             sleep 5
-            curl -fsS http://localhost:8000/health
+            curl -fsS "http://localhost:${PORT}/health"
+            echo ">> 部署成功,健康检查通过:http://<SSH_HOST>:${PORT}/health"
           '
 
   # 生产发布:金融场景留人工卡点 = 持续交付(Continuous Delivery)
