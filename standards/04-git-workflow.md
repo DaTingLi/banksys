@@ -46,21 +46,35 @@ git commit -m "feat: add first feature"
 # 5. 推送 feature 分支
 git push -u origin feature/1-first-feature
 
-# 6. 创建 PR
+# 6. 创建 PR(AI 做到这里为止)
 gh pr create --base main --head feature/1-first-feature --title "feat: add first feature" --body "closes #1"
 
-# 7. 查看 CI
+# 7. 查看 CI(AI 汇报 CI 状态后停下,等人类审核)
 gh run list --limit 5
 gh run watch
 
-# 8. CI 绿 + Review 后合并
-gh pr merge --merge --delete-branch
+# 8. ★ 合并由人类执行 ★ —— 人工 Review 通过后,由人在网页点 "Merge",或人工运行:
+#    gh pr merge <PR号> --merge      # 默认保留分支,不加 --delete-branch
+#    AI 不得自行合并未获批准的 PR。
 
 # 9. 合并 main 后会触发 CD,查看部署流水线
 gh run list --limit 5
 ```
 
 > 如果课堂暂时没有开启分支保护,也要按这个流程演示 PR。分支保护是“强制执行”,PR 流程是“正确习惯”。
+
+> **合并是人类的动作,不是 AI 的动作。** AI 在第 6/7 步发起 PR、汇报 CI 后必须停下;
+> **只有人工 Review 通过,由人合并**,才触发 CD。AI 绝不替人按下 Merge。
+
+> **默认保留分支**(不加 `--delete-branch`),除非人类明确要求删除已合并分支。
+
+> **PR 必须用你本人 GitHub 账号发起**(`gh auth login` 登录的就是你本人),不要借他人账号代提。
+
+> **⚠️ 建仓后第一件事:配置 Secrets,否则 CD 必失败。**
+> 新仓库创建后(CD 第一次跑之前)立刻去
+> `GitHub → Settings → Secrets and variables → Actions → New repository secret`
+> 配好 `SSH_PRIVATE_KEY` / `SSH_HOST` / `SSH_USER`(详见 `05-cicd-standards.md` 第 5 节)。
+> 没有数据库等部署目标时可只配 SSH 三件套。配置时机:**在合并到 main 触发 CD 之前**。
 
 ---
 
